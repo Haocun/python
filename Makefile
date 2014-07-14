@@ -67,7 +67,7 @@ endif
 LDFLAGS= -L$(LIB) -L$(LIB2)  -lm -lcfitsio -lgsl -lgslcblas 
 
 #Note that version should be a single string without spaces. 
-VERSION = 77
+VERSION = 78
 CHOICE=1             // Compress plasma as much as possible
 # CHOICE=0           //  Keep relation between plasma and wind identical
 
@@ -146,7 +146,7 @@ py_wind_objects = py_wind.o get_atomicdata.o py_wind_sub.o windsave.o py_wind_io
 
 
 py_wind: startup $(py_wind_objects)
-	mpicc $(CFLAGS) $(py_wind_objects) $(LDFLAGS) -o py_wind
+	$(CC) $(CFLAGS) $(py_wind_objects) $(LDFLAGS) -o py_wind
 	cp $@ $(BIN)
 	mv $@ $(BIN)/py_wind$(VERSION)
 

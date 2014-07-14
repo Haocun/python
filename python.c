@@ -247,8 +247,8 @@ should allocate the space for the spectra to avoid all this nonsense.  02feb ksl
   double xbl;
 
   int j, nn;
-  double zz, zzz, zze, ztot;
-  int icheck;
+  double zz, zzz, zze, ztot, zz_adiab;
+  int icheck, nn_adiab;
   FILE *fopen (), *qptr;
 
   int disk_illum;
@@ -723,7 +723,12 @@ on levels and their multiplicities is taken into account.   */
      &geo.line_mode);
 
 /* ?? ksl Next section seems rather a kluge.  Why don't we specifty the underlying variables explicitly 
-It also seems likely that we have mixed usage of some things, e.g ge.rt_mode and geo.macro_simple */
+It also seems likely that we have mixed usage of some things, e.g geo.rt_mode and geo.macro_simple */
+
+/* JM 1406 -- geo.rt_mode and geo.macro_simple control different things. geo.rt_mode controls the radiative
+   transfer and whether or not you are going to use the indivisible packet constraint, so you can have all simple 
+   ions, all macro-atoms or a mix of the two. geo.macro_simple just means one can turn off the full macro atom 
+   treatment and treat everything as 2-level simple ions inside the macro atom formalism */ 
 
   /* For now handle scattering as part of a hidden line transfermode ?? */
   if (geo.line_mode == 4)
@@ -756,9 +761,16 @@ It also seems likely that we have mixed usage of some things, e.g ge.rt_mode and
     {
       geo.scatter_mode = 0;	// isotropic
       geo.line_mode = 3;	// Single scattering
-      geo.rt_mode = 2;
+      geo.rt_mode = 2;		// Identify macro atom treatment i.e. indivisible packets
       geo.macro_simple = 1;	// This is for test runs with all simple ions (SS)
     }
+  else if (geo.line_mode == 9)	// JM 1406 -- new mode, as mode 7, but scatter mode is 1
+    {
+      geo.scatter_mode = 1;	// anisotropic scatter mode 1
+      geo.line_mode = 3;	// Single scattering
+      geo.rt_mode = 2;		// Identify macro atom treatment 
+      geo.macro_simple = 0;	// We don't want the all simple case 
+    }  
   else
     {
       geo.scatter_mode = 0;	// isotropic
@@ -1709,17 +1721,6 @@ run -- 07jul -- ksl
 		     top_bot_select, select_extract, rho_select, z_select,
 		     az_select, r_select);
 
-      /* Zero the arrays that store the heating of the disk */
-
-/* 080520 - ksl - There is a conundrum here.  One should really zero out the 
- * quantities below each time the wind structure is updated.  But relatively
- * few photons hit the disk under normal situations, and therefore the statistcs
- * are not very good.  
- */
-      for (n = 0; n < NRINGS; n++)
-	{
-	  qdisk.heat[n] = qdisk.nphot[n] = qdisk.w[n] = qdisk.ave_freq[n] = 0;
-	}
 
       wind_rad_init ();		/*Zero the parameters pertaining to the radiation field */
 
@@ -1765,6 +1766,23 @@ run -- 07jul -- ksl
 
 	  define_phot (p, freqmin, freqmax, nphot_to_define, 0, iwind, 1);
 
+      /* Zero the arrays that store the heating of the disk */
+
+      /* 080520 - ksl - There is a conundrum here.  One should really zero out the 
+       * quantities below each time the wind structure is updated.  But relatively
+       * few photons hit the disk under normal situations, and therefore the statistcs
+       * are not very good.  
+       */
+
+      /* 130213 JM -- previously this was done before define_phot, which meant that
+         the ionization state was never computed with the heated disk */
+
+      for (n = 0; n < NRINGS; n++)
+	{
+	  qdisk.heat[n] = qdisk.nphot[n] = qdisk.w[n] = qdisk.ave_freq[n] = 0;
+	}
+
+
 
 	  photon_checks (p, freqmin, freqmax, "Check before transport");
 
@@ -1799,16 +1817,25 @@ run -- 07jul -- ksl
 	  trans_phot (w, p, 0);
 
 	  /*Determine how much energy was absorbed in the wind */
-	  zze = zzz = 0.0;
+	  zze = zzz = zz_adiab = 0.0;
+	  nn_adiab = 0;
 	  for (nn = 0; nn < NPHOT; nn++)
 	    {
 	      zzz += p[nn].w;
 	      if (p[nn].istat == P_ESCAPE)
 		zze += p[nn].w;
+	      if (p[nn].istat == P_ADIABATIC)
+	      {
+		    zz_adiab += p[nn].w;
+		    nn_adiab++;
+		  }
 	    }
+
 	  Log
-	    ("!!python: Total photon luminosity after transphot %18.12e (diff %18.12e). Radiated luminosity %18.12e \n",
+	    ("!!python: Total photon luminosity after transphot %18.12e (diff %18.12e). Radiated luminosity %18.12e\n",
 	     zzz, zzz - zz, zze);
+      if (geo.rt_mode == 2)
+	  Log("Luminosity taken up by adiabatic kpkt destruction %18.12e number of packets %d\n", zz_adiab, nn_adiab);
 
 #if DEBUG
 	  wind_rad_summary (w, windradfile, "a");
