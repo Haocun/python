@@ -35,9 +35,9 @@ for line in f:
 				nerror += 1
 				print "Error: %s" % line
 
-		elif data[0] == "Error":
-			nerror += 1
-			print "Error: %s" % line
+		#elif data[0] == "Error":
+		#	nerror += 1
+		#	print "Error: %s" % line
 
 
 		elif data[0] == "Macro":
