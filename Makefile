@@ -27,10 +27,12 @@ endif
 
 ifeq (True, $(LIBS))
 	INSTALL_CFITSIO = cd $(CFITSIO); ./configure; make; mv libcfitsio.a ../../lib; make clean
-	INSTALL_GSL = cd $(GSL); ./configure --disable-shared --prefix=$(PYTHON)/gsl; make; make check 2>&1; make install; make clean
+	INSTALL_GSL = cd $(GSL); ./configure --disable-shared --prefix=$(GSL); make; make check 2>&1; make install; make clean; 
+	MOVE_GSL = mkdir $(PYTHON)/include/gsl/; mv $(GSL)/include/gsl* $(PYTHON)/include/gsl/; mv $(GSL)/lib/* $(PYTHON)/include/gsl/;
 else
 	INSTALL_CFITSIO = 
 	INSTALL_GSL = 
+	MOVE_GSL =
 endif
 
 install:
@@ -43,6 +45,7 @@ install:
 	# Then make GSL library
 	@echo 'Installing GSL library...'
 	$(INSTALL_GSL)
+	$(MOVE_GSL)
 
 	# get atomic data from git
 	@echo 'Installing Atomic data'
