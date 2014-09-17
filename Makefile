@@ -28,7 +28,7 @@ endif
 ifeq (True, $(LIBS))
 	INSTALL_CFITSIO = cd $(CFITSIO); ./configure; make; mv libcfitsio.a ../../lib; make clean
 	INSTALL_GSL = cd $(GSL); ./configure --disable-shared --prefix=$(GSL); make; make check 2>&1; make install; make clean; 
-	MOVE_GSL = mkdir $(PYTHON)/include/gsl/; mv $(GSL)/include/gsl/* $(PYTHON)/include/gsl; mv $(GSL)/lib/* $(PYTHON)/libs/;
+	MOVE_GSL = mkdir $(PYTHON)/include/gsl/; mv $(GSL)/include/gsl/* $(PYTHON)/include/gsl; mv $(GSL)/lib/* $(PYTHON)/lib/;
 else
 	INSTALL_CFITSIO = 
 	INSTALL_GSL = 
